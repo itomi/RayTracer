@@ -2,32 +2,15 @@
 //
 
 #include "stdafx.h"
-#define MAX_LIGHTS 8
-#define MAX_SPHERES 10
-#define WINDOW_NAME "Raytracer"
 
-typedef float point3[3];
+void createSpheres(std::vector<Object*> scene_objs, SettingsFile& file) {
+	std::vector<Command::CommandArgs> spheres = file.getArgsFor(Command::SPHERE);
 
-int     imageSize = 400;
-int		spheresCounter = 0;
-int		lightsCounter = 0;
-
-float   viewArea = 20.0;
-
-float   light_position[MAX_LIGHTS][3];
-float   light_specular[MAX_LIGHTS][3];
-float   light_diffuse[MAX_LIGHTS][3];
-float   light_ambient[MAX_LIGHTS][3];
-
-float   sphere_radius[MAX_SPHERES];
-float   sphere_position[MAX_SPHERES][3];
-float   sphere_specular[MAX_SPHERES][3];
-float   sphere_diffuse[MAX_SPHERES][3];
-float   sphere_ambient[MAX_SPHERES][3];
-float   sphere_specularhininess[MAX_SPHERES];
-
-point3  backColor;
-point3 globalLight;
+	for( Command::CommandArgs arg : spheres ) {
+		std::cout<<arg.SphereArgs.xpos<<" - "<<arg.SphereArgs.ypos<<std::endl;
+		scene_objs.push_back(new Sphere(*new vect(arg.SphereArgs.xpos, arg.SphereArgs.ypos, arg.SphereArgs.zpos), arg.SphereArgs.radius, *new Color(arg.SphereArgs.specular[0],arg.SphereArgs.specular[1],arg.SphereArgs.specular[2], ((double)arg.SphereArgs.shinines)/100.0)));
+	}
+}
 
 void saveBMP(std::string fileName, int w, int h, int dpi, RGBColor *data) {
 	std::fstream file;
@@ -97,15 +80,15 @@ void saveBMP(std::string fileName, int w, int h, int dpi, RGBColor *data) {
 	file.close();
 }
 
-Color getColorAt(vect& intersection_pos, vect& intersection_ray_dir, std::vector<Object*>& scene_objs, int index_of_intersection, std::vector<Source*>& lightSources, double accuracy, Light& ambientLight ) {
-
-	for( int i = 0 ; i < lightSources.size() ; i++ ) {
-
-	}
+Color getColorAt(vect& intersection_pos, vect& intersection_ray_dir, std::vector<Object*>& scene_objs, int index_of_intersection, std::vector<Source*>& lightSources, double accuracy, double ambLight ) {
+	
 	Color& first_obj_color = scene_objs.at(index_of_intersection)->getColor();
 	vect& first_obj_normal = scene_objs.at(index_of_intersection)->getNormalAt(intersection_pos);
-	for( Source* light : lightSources ) {
+	Color&  finalColor = first_obj_color.colorScalar(ambLight);
+	for(int l = 0 ; l < lightSources.size() ; l++ ) {
+		Source* light = lightSources.at(l);
 		vect& light_dir = vect(light->getPosition().addVect(intersection_pos.negative()).normalize());
+
 		float cosine_angle = first_obj_normal.dotProduct(light_dir);
 
 		if( cosine_angle > 0.0 ) { // cien jest
@@ -113,18 +96,49 @@ Color getColorAt(vect& intersection_pos, vect& intersection_ray_dir, std::vector
 			vect& distanceToLight = light->getPosition().addVect(intersection_pos.negative()).normalize();
 			float distanceToLightMagnitude = distanceToLight.countMagnitude();
 
-			Ray& shadow_ray = Ray(intersection_pos, light->getPosition().addVect(intersection_pos.negative().normalize()));
+			Ray& shadow_ray = Ray(intersection_pos, light->getPosition().addVect(intersection_pos.negative()).normalize());
 
 			std::vector<double> secondary_intersection;
 			if( shadow ) {
-				for( Object* obj : scene_objs ) {
+				for( int i = 0 ; i < scene_objs.size() ; i++) {
+					Object* obj = scene_objs.at(i);
 					secondary_intersection.push_back(obj->findIntersection(shadow_ray));
 				}	
+				for( int i = 0 ; i < secondary_intersection.size() ; i++ ) {
+					double intersect_value = secondary_intersection.at(i);
+					if( intersect_value > accuracy ) {
+						if( intersect_value <= distanceToLightMagnitude )
+							shadow = true;
+					}
+					
+					break;
+				}
+			} 
+
+			if( shadow == false ) {
+				finalColor = finalColor.addColor(first_obj_color.colorMultiply(light->getColor()).colorScalar(cosine_angle));
+
+				if( first_obj_color.getS() > 0.0 && first_obj_color.getS() <= 1.0 ) {
+					double val = first_obj_normal.dotProduct(intersection_ray_dir.negative());
+					vect& scalar = first_obj_normal.multipVect(val);
+					vect& additive = scalar.addVect(intersection_ray_dir);
+					vect& scalar2 = additive.multipVect(2.0);
+					vect& aditive2 = intersection_ray_dir.negative().addVect(scalar2);
+					vect& reflection_dir = aditive2.normalize();
+
+					double specular = reflection_dir.dotProduct(light_dir);
+					if(specular > 0.0) {
+						specular = pow(specular,10);
+						finalColor = finalColor.addColor((light->getColor().colorScalar(specular*first_obj_color.getS())));
+					}
+
+				}
+
 			}
 		}
 	}
 
-	return Color(0.0,0.0,0.0,0.0);
+	return finalColor.clip();
 }
 
 int firstIntersection(std::vector<double>& intersections ) {
@@ -169,39 +183,49 @@ int _tmain(int argc, char* argv[]) {
 	}
 
 	SettingsFile& fileWithSettings = SettingsFile::parseFile(fileName);
+
+	fileWithSettings.printCommands(std::cout);
+
 	std::cout<<"rendering..."<<std::endl;
 
-	Command::CommandArgs& dimension = fileWithSettings.getArgsFor(Command::DIMENSION);
+	std::vector<Command::CommandArgs> dimension = fileWithSettings.getArgsFor(Command::DIMENSION);
 
-	int width = dimension.DimArgs.width;
-	int hight  = dimension.DimArgs.hight;
+	int width = dimension.at(0).DimArgs.width;
+	int hight  = dimension.at(0).DimArgs.hight;
+
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);   
+	glutInitWindowSize(width, hight);
+	glutCreateWindow("Ray Tracing");
 
 	double aspectRatio = static_cast<double>(width) / static_cast<double>(hight);
-	double ambientLight = 0.2;
+	double ambLight = 0.5;
 	double accuracy = 0.000001;
 
 	int arrayPoint = 0;
 
 	RGBColor *pixel = new RGBColor[ width*hight ];
+	GLubyte  glpixel[1][1][3];
 	vect O(0,0,0);
 	vect x(1,0,0);
 	vect y(0,1,0);
+	vect planePos(0,-2.0,0);
 	vect z(0,0,1);
 
-	vect campos(3.0,1.5,-4.0);
-	vect look_at(0,0,0);
-	vect diff_btw(campos.getX() - look_at.getX(), campos.getY() - look_at.getY(), campos.getZ() - look_at.getZ());
+	vect camPosition(3.0,1.5,-10.0);
+	vect camLookAt(0,0,0);
+	vect camPointsOnVec(camPosition.getX() - camLookAt.getX(), camPosition.getY() - camLookAt.getY(), camPosition.getZ() - camLookAt.getZ());
 
-	vect camdir = vect::normalizeVect(diff_btw.negative());
-	vect camright = vect::normalizeVect(y.crossProduct(camdir));
-	vect camdown = camright.crossProduct(camdir);
-	Camera scene_cam(campos, camdir, camright, camdown);
+	vect cameraDir = vect::normalizeVect(camPointsOnVec.negative());
+	vect camright = vect::normalizeVect(y.crossProduct(cameraDir));
+	vect camdown = camright.crossProduct(cameraDir);
+	Camera scene_cam(camPosition, cameraDir, camright, camdown);
 
-	Color white_light(1.0,1.0,1.0,0);
-	Color pretty_green(0.5,1.0,0.5,0.3);
-	Color maroon(0.5, 0.25, 0.25, 0.0);
-	Color gray(0.5,0.5,0.5,0);
-	Color black(0.0, 0.0,0.0, 0);
+	Color white_light (1.0, 1.0, 1.0, 0);
+	Color pretty_green (0.5, 1.0, 0.5, 1.0);
+	Color maroon (0.5, 0.25, 0.25, 0);
+	Color tile_floor (1, 1, 1, 2);
+	Color gray (0.5, 0.5, 0.5, 0);
+	Color black (0.0, 0.0, 0.0, 0);
 
 	Sphere scene_sphere(O, 1.0, pretty_green);
 	Plane scene_plane(y, -1, maroon);
@@ -211,6 +235,11 @@ int _tmain(int argc, char* argv[]) {
 
 	std::vector<Object*> scene_objects;
 	std::vector<Source*> scene_lights;
+
+	createSpheres(scene_objects, fileWithSettings);
+
+	scene_lights.push_back(dynamic_cast<Source*>(&scene_light));
+	//scene_lights.push_back(dynamic_cast<Source*>(&ambient_light));
 
 	scene_objects.push_back(dynamic_cast<Object*>(&scene_plane));
 	scene_objects.push_back(dynamic_cast<Object*>(&scene_sphere));
@@ -233,7 +262,7 @@ int _tmain(int argc, char* argv[]) {
 			}
 
 			vect cam_ray_origin = scene_cam.getCamPos();
-			vect cam_ray_dir = camdir.addVect(camright.multipVect(xamnt - 0.5).addVect(camdown.multipVect(yamnt -0.5))).normalize();
+			vect cam_ray_dir = cameraDir.addVect(camright.multipVect(xamnt - 0.5).addVect(camdown.multipVect(yamnt -0.5))).normalize();
 
 			Ray cam_ray = Ray(cam_ray_origin, cam_ray_dir);
 
@@ -255,18 +284,34 @@ int _tmain(int argc, char* argv[]) {
 					vect& intersection_pos = cam_ray_origin.addVect(cam_ray_dir.multipVect(intersections.at(index_of_first_intersection)));
 					vect& intersection_ray_direction = cam_ray_dir;
 
-					Color& thisPixelColor = getColorAt(intersection_pos, intersection_ray_direction, scene_objects, index_of_first_intersection,scene_lights,accuracy,ambient_light);
+					Color& thisPixelColor = getColorAt(intersection_pos, intersection_ray_direction, scene_objects, index_of_first_intersection,scene_lights,accuracy,ambLight);
 
 					pixel[arrayPoint].r = thisPixelColor.getR();
 					pixel[arrayPoint].b = thisPixelColor.getB();
 					pixel[arrayPoint].g = thisPixelColor.getG();
+
+					glpixel[0][0][0] = thisPixelColor.getR() * 255;
+					glpixel[0][0][1] = thisPixelColor.getG() * 255;
+					glpixel[0][0][2] = thisPixelColor.getB() * 255;
+
+					glRasterPos3f(i, j, 0);
+					glDrawPixels(1, 1, GL_RGB, GL_UNSIGNED_BYTE, glpixel);
+
 				}
 			}
 
 		}
 	}
 
-	saveBMP(std::string("kul23132212.bmp"), width, hight, 72, pixel);
+
+	std::cout<<"nazewa bez bmp:\n";
+	std::cin>> fileName;
+
+	if( fileName.find(".") == std::string::npos ) {
+		fileName = fileName + ".bmp";
+	}
+
+	saveBMP(fileName, width, hight, 72, pixel);
 
 	system("pause");
 

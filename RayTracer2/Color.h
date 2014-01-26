@@ -23,5 +23,6 @@ public:
 	Color addColor(Color& color);
 	Color colorMultiply(Color& color);
 	Color colorAverage(Color& color);
+	Color clip();
 };
 

@@ -33,11 +33,24 @@ SettingsFile& SettingsFile::parseFile( std::string& fileName ) {
 	return file;
 }
 
-Command::CommandArgs& SettingsFile::getArgsFor( Command::CommandType cmdType ) {
+std::vector<Command::CommandArgs> SettingsFile::getArgsFor( Command::CommandType cmdType ) {
+	std::vector<Command::CommandArgs> returnedVec;
 	for( Command cmd : commands ) {
-		if( cmd.getType() == cmdType ) {
-			return cmd.args;
+		if( cmdType == cmd.getType() ){
+			returnedVec.push_back( cmd.args );
 		}
 	}
-	throw new std::exception("Nie znaleziono komendy");
+
+	if( returnedVec.size() == 0 ) {
+		throw new std::exception("Nie znaleziono komendy");
+	} else {
+		return returnedVec;
+	}
+}
+
+void SettingsFile::printCommands( std::ostream& stream ) {
+	for( Command cmd : commands ) {
+		stream << cmd << "\n";
+	}
+	stream.flush();
 }

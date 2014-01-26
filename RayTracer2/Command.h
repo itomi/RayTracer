@@ -52,6 +52,15 @@ public:
 	~Command(void);
 
 	Command::CommandType getType();
+
+	friend std::ostream& operator<<(std::ostream& os, const Command& command) {
+		os<<"Command: [";
+		for( std::string str : command.commandLine ) {
+			os<<str<<" ";
+		}
+		os<<"]";
+		return os;
+	}
 private:
 	void handleValues();
 };
