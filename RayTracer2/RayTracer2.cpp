@@ -126,10 +126,71 @@ void readCoommandsFromFile(std::string fileWithCommands)
 		exit(0);
 	}
 }
-int _tmain(int argc, _TCHAR* argv[])
-{
-	//glutCreateWindow(WINDOW_NAME);
-	//glutMainLoop();
+
+void saveBMP(std::string fileName, int w, int h, int dpi, RGBColor *data) {
+	std::fstream file;
+	int dataLength = w*h;
+	int fileSize = dataLength * 4;
+	int wholeFileSize = 54 + fileSize;
+
+	double factor = 39.375;
+	int m = static_cast<int>(factor);
+
+	int pixPerM = dpi*m;
+
+	unsigned char bmpfileheader[14] = {'B', 'M', 0,0,0,0, 0,0,0,0, 54,0,0,0 };
+	unsigned char bmpinfoheader[40] = {40,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,24,0 };
+
+	bmpfileheader[2] = (unsigned char) (wholeFileSize);
+	bmpfileheader[3] = (unsigned char) (wholeFileSize>>8);
+	bmpfileheader[4] = (unsigned char) (wholeFileSize>>16);
+	bmpfileheader[5] = (unsigned char) (wholeFileSize>>24);
+
+	bmpinfoheader[4] = (unsigned char) (w);
+	bmpinfoheader[5] = (unsigned char) (w>>8);
+	bmpinfoheader[6] = (unsigned char) (w>>16);
+	bmpinfoheader[7] = (unsigned char) (w>>24);
+
+
+	bmpinfoheader[8] = (unsigned char) (h);
+	bmpinfoheader[9] = (unsigned char) (h>>8);
+	bmpinfoheader[10] = (unsigned char) (h>>16);
+	bmpinfoheader[11] = (unsigned char) (h>>24);
+
+	bmpinfoheader[21] = (unsigned char) (s);
+	bmpinfoheader[22] = (unsigned char) (s>>8);
+	bmpinfoheader[23] = (unsigned char) (s>>16);
+	bmpinfoheader[24] = (unsigned char) (s>>24);
+
+
+	bmpinfoheader[25] = (unsigned char) (pixPerM);
+	bmpinfoheader[26] = (unsigned char) (pixPerM>>8);
+	bmpinfoheader[27] = (unsigned char) (pixPerM>>16);
+	bmpinfoheader[28] = (unsigned char) (pixPerM>>24);
+
+
+	bmpinfoheader[29] = (unsigned char) (pixPerM);
+	bmpinfoheader[30] = (unsigned char) (pixPerM>>8);
+	bmpinfoheader[31] = (unsigned char) (pixPerM>>16);
+	bmpinfoheader[32] = (unsigned char) (pixPerM>>24);
+
+	file.open(fileName, std::fstream::in | std::fstream::out | std::fstream::binary );
+
+	file.write()
+
+}
+
+int _tmain(int argc, char* argv[]) {
+	std::string fileName = "";
+	if( argc == 1 ) {
+		std::cout<<"Podaj nazwe pliku: ";
+		std::cin>>fileName;
+	} else if( argc > 1 ) {
+		fileName = std::string(argv[1]);
+	}
+
+	SettingsFile& fileWithSettings = SettingsFile::parseFile(fileName);
+	std::cout<<"rendering..."<<std::endl;
 
 	vect& vec = vect(1.0,40.5,12.4);
 

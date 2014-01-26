@@ -82,6 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Command.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="SettingsFile.h" />
     <ClInclude Include="stdafx.h" />
@@ -90,6 +91,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Command.cpp" />
     <ClCompile Include="Ray.cpp" />
     <ClCompile Include="RayTracer2.cpp" />
     <ClCompile Include="SettingsFile.cpp" />

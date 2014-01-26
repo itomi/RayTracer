@@ -45,3 +45,31 @@ void vect::normalizeMe() {
 		this->z = z / fm_magnitude;
 	}
 }
+
+vect& vect::negative( vect& vectToBeNegated ) {
+	return *new vect(-vectToBeNegated.x,-vectToBeNegated.y,-vectToBeNegated.z);
+}
+
+double vect::dotProduct( vect& vec2 ) {
+	return x*vec2.x + y*vec2.y + z*vec2.z;
+}
+
+double vect::dotProduct( vect& vec1, vect& vec2 ) {
+	return vec1.x*vec2.x + vec1.y*vec2.y + vec1.z*vec2.z;
+}
+
+vect vect::crossProduct( vect& vec2 ) {
+	return vect(y*vec2.z - z*vec2.y, z*vec2.x - x*vec2.z, x*vec2.y - y*vec2.x);
+}
+
+vect vect::crossProduct( vect& vec1, vect& vec2 ) {
+	return vect(vec1.y*vec2.z - vec1.z*vec2.y, vec1.z*vec2.x - vec1.x*vec2.z, vec1.x*vec2.y - vec1.y*vec2.x);
+}
+
+vect vect::addVect( vect& vec2 ){
+	return vect(x+vec2.x, y+vec2.y, z+vec2.z);
+}
+
+vect vect::multipVect( double multiplier ) {
+	return vect(x*multiplier,y*multiplier,z*multiplier);
+}

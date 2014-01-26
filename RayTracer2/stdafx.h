@@ -22,6 +22,8 @@
 #include <cstdlib>
 
 #include "vect.h"
+#include "Command.h"
+#include "SettingsFile.h"
 
 #include "glut.h"
 
