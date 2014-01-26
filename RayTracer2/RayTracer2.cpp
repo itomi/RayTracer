@@ -113,6 +113,7 @@ int _tmain(int argc, char* argv[]) {
 
 	int width = dimension.DimArgs.width;
 	int hight  = dimension.DimArgs.hight;
+	double aspectRatio = static_cast<double>(width) / static_cast<double>(hight);
 	int arrayPoint = 0;
 
 	RGBColor *pixel = new RGBColor[ width*hight ];
@@ -120,6 +121,7 @@ int _tmain(int argc, char* argv[]) {
 	vect x(1,0,0);
 	vect y(0,1,0);
 	vect z(0,0,1);
+
 	vect campos(3.0,1.5,-4.0);
 	vect look_at(0,0,0);
 	vect diff_btw(campos.getX() - look_at.getX(), campos.getY() - look_at.getY(), campos.getZ() - look_at.getZ());
@@ -131,22 +133,45 @@ int _tmain(int argc, char* argv[]) {
 
 	Color white_light(1.0,1.0,1.0,0);
 	Color pretty_green(0.5,1.0,0.5,0.3);
+	Color maroon(0.5, 0.25, 0.25, 0.0);
 	Color gray(0.5,0.5,0.5,0);
+	Color black(0.0, 0.0,0.0, 0);
 
 	Sphere scene_sphere(O, 1.0, pretty_green);
+	Plane scene_plane(y, -1, maroon);
+	std::vector<Object&> scene_objects;
+
+	scene_objects.push_back(scene_plane);
+	scene_objects.push_back(scene_sphere);
+
+	double xamnt, yamnt; 
 
 	for( int i = 0 ; i < width ; i++ ) {
 		for( int j = 0 ; j < hight ; j++ ) {
 			arrayPoint = j*width + i;
 
-			pixel[arrayPoint].r = 0.5;
-			pixel[arrayPoint].r = 1.0;
-			pixel[arrayPoint].r = 1.0;
+			if(width > hight) {
+				xamnt = ((i+0.5)/width)*aspectRatio - (((width-hight)/(double)hight)/2.0);
+				yamnt = ((hight - j) + 0.5)/hight;
+			} else if( hight > width ) {
+				xamnt = (i+0.5)/width; 
+				yamnt = (((hight - j) + 0.5)/hight)/aspectRatio - (((hight - width)/(double)width)/2.0);
+			} else {
+				xamnt = (i + 0.5)/width;
+				yamnt = ((hight - j) + 0.5)/hight;
+			}
+
+			vect cam_ray_origin = scene_cam.getCamPos();
+			vect cam_ray_dir = camdir.addVect(camright.multipVect(xamnt - 0.5).addVect(camdown.multipVect(yamnt -0.5))).normalize();
+
+			Ray cam_ray = Ray(cam_ray_origin, cam_ray_dir);
+
+			std::vector<double> intersections;
 
 		}
 	}
 
-	saveBMP(std::string("kul2.bmp"), width, hight, 72, pixel);
+	saveBMP(std::string("kul23132212.bmp"), width, hight, 72, pixel);
 
 	system("pause");
 

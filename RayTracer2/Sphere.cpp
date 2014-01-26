@@ -13,10 +13,13 @@ Sphere::Sphere( const Sphere& sphere )
 		color(*new Color(sphere.color))
 {}
 
+Sphere::Sphere( vect& position, double radius, Color& color) 
+	:	position(position),
+		radius(radius),
+		color(color)
+{}
 
-Sphere::~Sphere(void)
-{
-}
+Sphere::~Sphere(void) {}
 
 double& Sphere::getRadius() {
 	return radius;

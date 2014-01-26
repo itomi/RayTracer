@@ -27,6 +27,7 @@
 #include "SettingsFile.h"
 #include "Color.h"
 #include "Sphere.h"
+#include "Plane.h"
 
 
 #include "glut.h"

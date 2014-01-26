@@ -18,6 +18,7 @@ public:
 	double countMagnitude();
 
 	void normalizeMe();
+	vect normalize();
 	vect negative();
 
 	double dotProduct(vect& vec2);

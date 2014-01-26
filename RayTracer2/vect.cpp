@@ -52,6 +52,14 @@ void vect::normalizeMe() {
 	}
 }
 
+vect vect::normalize() {
+	double fm_magnitude = sqrt(x*x + y*y + z*z);
+	if( fm_magnitude > 0.0 ) {
+		return vect(x / fm_magnitude, y / fm_magnitude,z / fm_magnitude);
+	}
+	return vect(0.0,0.0,0.0);
+}
+
 vect& vect::negative( vect& vectToBeNegated ) {
 	return *new vect(-vectToBeNegated.x,-vectToBeNegated.y,-vectToBeNegated.z);
 }
