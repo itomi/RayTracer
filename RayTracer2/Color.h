@@ -16,5 +16,12 @@ public:
 	void setG(double g);
 	void setB(double b);
 	void setS(double s);
+
+	double getBrightness();
+
+	Color colorScalar(double scalar);
+	Color addColor(Color& color);
+	Color colorMultiply(Color& color);
+	Color colorAverage(Color& color);
 };
 

@@ -18,6 +18,9 @@ public:
 
 	double& getRadius();
 	vect& getPosition();
-	Color& getColor();
+	virtual Color& getColor();
+
+	virtual vect getNormalAt(vect& point);
+	virtual double findIntersection(Ray& ray);
 };
 

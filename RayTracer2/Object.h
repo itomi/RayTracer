@@ -9,7 +9,7 @@ public:
 	Object(void);
 	~Object(void);
 
-	Color& getObjectColor();
-
-	double findIntersection(Ray& ray);
-};
+	virtual Color& getColor();
+	virtual double findIntersection(Ray& ray);
+	virtual vect getNormalAt(vect& vec2) = 0;
+}; 

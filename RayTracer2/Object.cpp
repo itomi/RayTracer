@@ -6,7 +6,7 @@ Object::Object(void) {}
 
 Object::~Object(void) {}
 
-Color& Object::getObjectColor() {
+Color& Object::getColor() {
 	return *new Color(0.0,0.0,0.0,0.0);
 }
 

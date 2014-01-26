@@ -28,6 +28,8 @@
 #include "Color.h"
 #include "Sphere.h"
 #include "Plane.h"
+#include "Source.h"
+#include "Light.h"
 
 
 #include "glut.h"

@@ -18,3 +18,11 @@ Light::Light( const Light& light )
 
 
 Light::~Light(void) {}
+
+vect& Light::getPosition() {
+	return m_pos;
+}
+
+Color& Light::getColor() {
+	return m_lightColor;
+}

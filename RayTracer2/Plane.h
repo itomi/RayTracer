@@ -15,8 +15,9 @@ public:
 
 	vect& getNormal();
 	double& getDistance();
-	Color& getColor();
+	virtual Color& getColor();
+	virtual vect getNormalAt(vect& vec2);
 	
-	double findIntersection(Ray& ray);
+	virtual double findIntersection(Ray& ray);
 };
 

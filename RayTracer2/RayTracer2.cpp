@@ -97,6 +97,58 @@ void saveBMP(std::string fileName, int w, int h, int dpi, RGBColor *data) {
 	file.close();
 }
 
+Color getColorAt(vect& intersection_pos, vect& intersection_ray_dir, std::vector<Object*>& scene_objs, int index_of_intersection, std::vector<Source*>& lightSources, double accuracy, Light& ambientLight ) {
+
+	for( int i = 0 ; i < lightSources.size() ; i++ ) {
+
+	}
+	Color& first_obj_color = scene_objs.at(index_of_intersection)->getColor();
+	vect& first_obj_normal = scene_objs.at(index_of_intersection)->getNormalAt(intersection_pos);
+	for( Source* light : lightSources ) {
+		vect& light_dir = vect(light->getPosition().addVect(intersection_pos.negative()).normalize());
+		float cosine_angle = first_obj_normal.dotProduct(light_dir);
+
+		if( cosine_angle > 0.0 ) { // cien jest
+			bool shadow = false;
+			vect& distanceToLight = light->getPosition().addVect(intersection_pos.negative()).normalize();
+		}
+	}
+
+	return Color(0.0,0.0,0.0,0.0);
+}
+
+int firstIntersection(std::vector<double>& intersections ) {
+	switch(intersections.size()) {
+	case 0:
+		return -1;
+		break;
+	case 1:
+		return (intersections.at(0) > 0.0 ? 0 : -1);
+		break;
+	default:
+		double max = 0.0;
+		for( int i = 0 ; i < intersections.size() ; i++ ) {
+			if( max < intersections.at(i) ) {
+				max = intersections.at(i);
+			}
+		}
+
+		if( max > 0.0 ) {
+			int index;
+			for( int i = 0 ; i < intersections.size() ; i++ ) {
+				double intersec = intersections.at(i);
+				if(  intersec > 0.0 && intersec <= max ) {
+					max = intersec;
+					index = i;
+				}
+			}
+			return index;
+		} else {
+			return -1;
+		}
+	}
+}
+
 int _tmain(int argc, char* argv[]) {
 	std::string fileName = "";
 	if( argc == 1 ) {
@@ -113,7 +165,11 @@ int _tmain(int argc, char* argv[]) {
 
 	int width = dimension.DimArgs.width;
 	int hight  = dimension.DimArgs.hight;
+
 	double aspectRatio = static_cast<double>(width) / static_cast<double>(hight);
+	double ambientLight = 0.2;
+	double accuracy = 0.000001;
+
 	int arrayPoint = 0;
 
 	RGBColor *pixel = new RGBColor[ width*hight ];
@@ -139,10 +195,15 @@ int _tmain(int argc, char* argv[]) {
 
 	Sphere scene_sphere(O, 1.0, pretty_green);
 	Plane scene_plane(y, -1, maroon);
-	std::vector<Object&> scene_objects;
+	vect& light_pos = vect(-7,10, -10);
+	Light scene_light(light_pos, white_light);
+	Light ambient_light(light_pos, white_light);
 
-	scene_objects.push_back(scene_plane);
-	scene_objects.push_back(scene_sphere);
+	std::vector<Object*> scene_objects;
+	std::vector<Source*> scene_lights;
+
+	scene_objects.push_back(dynamic_cast<Object*>(&scene_plane));
+	scene_objects.push_back(dynamic_cast<Object*>(&scene_sphere));
 
 	double xamnt, yamnt; 
 
@@ -167,6 +228,30 @@ int _tmain(int argc, char* argv[]) {
 			Ray cam_ray = Ray(cam_ray_origin, cam_ray_dir);
 
 			std::vector<double> intersections;
+
+			for( Object* obj : scene_objects ) {
+				intersections.push_back(obj->findIntersection(cam_ray));
+			}
+
+			int index_of_first_intersection = firstIntersection(intersections);
+
+			if(index_of_first_intersection == -1) {
+				pixel[arrayPoint].r =0;
+				pixel[arrayPoint].b =0;
+				pixel[arrayPoint].g = 0;
+			} else {
+				if(intersections.at(index_of_first_intersection) > accuracy ) { // jesli ta wartosc jest wieksza niz blad, to mozemy zalozyc ze idziemy po drugi obiekt
+
+					vect& intersection_pos = cam_ray_origin.addVect(cam_ray_dir.multipVect(intersections.at(index_of_first_intersection)));
+					vect& intersection_ray_direction = cam_ray_dir;
+
+					Color& thisPixelColor = getColorAt(intersection_pos, intersection_ray_direction, scene_objects, index_of_first_intersection,scene_lights,accuracy,ambient_light);
+
+					pixel[arrayPoint].r = thisPixelColor.getR();
+					pixel[arrayPoint].b = thisPixelColor.getB();
+					pixel[arrayPoint].g = thisPixelColor.getG();
+				}
+			}
 
 		}
 	}

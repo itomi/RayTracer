@@ -46,3 +46,7 @@ double Plane::findIntersection( Ray& ray ) {
 		return -1*b/a;
 	}
 }
+
+vect Plane::getNormalAt( vect& vec2 ) {
+	return m_normal;
+}
