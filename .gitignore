@@ -58,3 +58,5 @@ TestResult.xml
 *.pidb
 *.svclog
 *.scc
+*.sdf
+*.opensdf
