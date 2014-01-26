@@ -111,6 +111,16 @@ Color getColorAt(vect& intersection_pos, vect& intersection_ray_dir, std::vector
 		if( cosine_angle > 0.0 ) { // cien jest
 			bool shadow = false;
 			vect& distanceToLight = light->getPosition().addVect(intersection_pos.negative()).normalize();
+			float distanceToLightMagnitude = distanceToLight.countMagnitude();
+
+			Ray& shadow_ray = Ray(intersection_pos, light->getPosition().addVect(intersection_pos.negative().normalize()));
+
+			std::vector<double> secondary_intersection;
+			if( shadow ) {
+				for( Object* obj : scene_objs ) {
+					secondary_intersection.push_back(obj->findIntersection(shadow_ray));
+				}	
+			}
 		}
 	}
 
@@ -236,8 +246,8 @@ int _tmain(int argc, char* argv[]) {
 			int index_of_first_intersection = firstIntersection(intersections);
 
 			if(index_of_first_intersection == -1) {
-				pixel[arrayPoint].r =0;
-				pixel[arrayPoint].b =0;
+				pixel[arrayPoint].r = 0;
+				pixel[arrayPoint].b = 0;
 				pixel[arrayPoint].g = 0;
 			} else {
 				if(intersections.at(index_of_first_intersection) > accuracy ) { // jesli ta wartosc jest wieksza niz blad, to mozemy zalozyc ze idziemy po drugi obiekt
