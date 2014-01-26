@@ -21,14 +21,10 @@
 *.sln.docstates
 
 # Build results
-Debug/
-DebugPublic/
 Release/
-x64/
-build/
-bld/
-Bin/
-Obj/
+Debug/
+RayTracer2/Debug
+RayTracer2/Release
 
 #NUNIT
 *.VisualState.xml
@@ -58,3 +54,6 @@ TestResult.xml
 *.pidb
 *.svclog
 *.scc
+*.sdf
+*.opensdf
+
