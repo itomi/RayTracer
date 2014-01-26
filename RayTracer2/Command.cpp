@@ -44,3 +44,7 @@ void Command::handleValues() {
 		throw new std::exception((std::string("Nieznany typ komendy: ") + commandLine.at(0)).c_str());
 	}
 }
+
+Command::CommandType Command::getType() {
+	return this->cmdType;
+}

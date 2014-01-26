@@ -4,6 +4,7 @@
 
 class Command
 {
+public:
 	enum CommandType{
 		DIMENSION,
 		BACKGROUND,
@@ -41,6 +42,7 @@ class Command
 			float color[3];  // r,g,b
 		}BackArgs;
 	} args;
+private:
 	static const char* mapValToString[];
 	CommandType cmdType;
 	std::vector<std::string> commandLine;
@@ -48,6 +50,8 @@ public:
 	Command(void);
 	Command(std::vector<std::string> command);
 	~Command(void);
+
+	Command::CommandType getType();
 private:
 	void handleValues();
 };

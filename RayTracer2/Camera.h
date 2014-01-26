@@ -8,6 +8,8 @@ class Camera
 
 public:
 	Camera(void);
+	Camera(const Camera& camera);
+	Camera(vect&, vect&, vect&, vect&);
 	~Camera(void);
 
 	vect& getCamPos();

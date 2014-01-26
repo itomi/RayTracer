@@ -29,104 +29,6 @@ float   sphere_specularhininess[MAX_SPHERES];
 point3  backColor;
 point3 globalLight;
 
-static inline std::string &ltrim(std::string &s) {
-	s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
-	return s;
-}
-static inline std::string &rtrim(std::string &s) {
-	s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-	return s;
-}
-static inline std::string &trim(std::string &s) {
-	return ltrim(rtrim(s));
-}
-void handleDimension(std::vector<std::string>& command) {
-	imageSize = std::stoi(command.at(1));
-}
-void  handleBackgroud(std::vector<std::string>& command) {
-	for( int i = 0 ; i < 3 ; i++)
-		backColor[i] = std::stof(command.at(i+1));
-}
-void handleGlobalLight(std::vector<std::string>& command) {
-	for( int i = 0 ; i < 3 ; i++)
-		globalLight[i] = std::stof(command.at(i+1));
-}
-void handleSphere(std::vector<std::string>& command) {
-	sphere_radius[spheresCounter] = std::stof(command.at(1));
-	int i;
-	for (i=0; i<3; i++)	
-		sphere_position[spheresCounter][i] = std::stof(command.at(i+2));
-	for (i=0; i<3; i++)
-		sphere_specular[spheresCounter][i] = std::stof(command.at(1+5));
-	for (i=0; i<3; i++)
-		sphere_diffuse[spheresCounter][i] = std::stof(command.at(1+8));
-	for (i=0; i<3; i++)	
-		sphere_ambient[spheresCounter][i] = std::stof(command.at(1+11));
-
-	sphere_specularhininess[spheresCounter] = std::stof(command.at(14));
-	spheresCounter++;
-
-}
-void handleLight(std::vector<std::string>& command) {
-	int i ;
-	for (i=0; i<3; i++)	
-		light_position[lightsCounter][i] = std::stof(command.at(i+1));
-	for (i=0; i<3; i++)	
-		light_specular[lightsCounter][i] = std::stof(command.at(i+4));
-	for (i=0; i<3; i++)
-		light_diffuse[lightsCounter][i] = std::stof(command.at(i+7));
-	for (i=0; i<3; i++)
-		light_ambient[lightsCounter][i] = std::stof(command.at(i+10));
-	lightsCounter++;
-}
-void processCommand(std::vector<std::string>& command) {
-	std::string& object = command.at(0);
-	std::cout<<"Dlugosc komendy: "<<command.size()<<"\n";
-	if( object == "dimensions" ) {
-		handleDimension(command);
-	} else if( object == "background") {
-		handleBackgroud(command);
-	} else if( object == "global") {
-		handleGlobalLight(command);
-	} else if( object == "sphere") {
-		if(spheresCounter < MAX_SPHERES)
-			handleSphere(command);
-	} else if( object == "source") {
-		if(lightsCounter < MAX_LIGHTS ) 
-			handleLight(command);
-	} else {
-		std::cerr<<"nieznana komenda"<<command.at(0)<<"\n";
-	}
-
-}
-
-void readCoommandsFromFile(std::string fileWithCommands) 
-{
-	std::fstream& dataFile = std::fstream(fileWithCommands, std::fstream::in);
-	std::string lineBuffer = "";
-	std::string temp = "";
-	std::vector<std::string> temporaryCommand;
-
-	if(dataFile.is_open()) {
-		while(!dataFile.eof()) {
-			std::getline(dataFile, lineBuffer);
-			std::stringstream lineBuf(lineBuffer);
-			int pos = 0;
-			while (!lineBuf.eof()) {
-				lineBuf >> temp;
-				temporaryCommand.push_back(temp);
-			}
-
-			processCommand(temporaryCommand);
-			temporaryCommand.clear();
-		}
-	} else {
-		std::cout<<"Brak pliku "<<fileWithCommands<<"\n";
-		system("pause");
-		exit(0);
-	}
-}
-
 void saveBMP(std::string fileName, int w, int h, int dpi, RGBColor *data) {
 	std::fstream file;
 	int dataLength = w*h;
@@ -157,10 +59,10 @@ void saveBMP(std::string fileName, int w, int h, int dpi, RGBColor *data) {
 	bmpinfoheader[10] = (unsigned char) (h>>16);
 	bmpinfoheader[11] = (unsigned char) (h>>24);
 
-	bmpinfoheader[21] = (unsigned char) (s);
-	bmpinfoheader[22] = (unsigned char) (s>>8);
-	bmpinfoheader[23] = (unsigned char) (s>>16);
-	bmpinfoheader[24] = (unsigned char) (s>>24);
+	bmpinfoheader[21] = (unsigned char) (fileSize);
+	bmpinfoheader[22] = (unsigned char) (fileSize>>8);
+	bmpinfoheader[23] = (unsigned char) (fileSize>>16);
+	bmpinfoheader[24] = (unsigned char) (fileSize>>24);
 
 
 	bmpinfoheader[25] = (unsigned char) (pixPerM);
@@ -174,10 +76,25 @@ void saveBMP(std::string fileName, int w, int h, int dpi, RGBColor *data) {
 	bmpinfoheader[31] = (unsigned char) (pixPerM>>16);
 	bmpinfoheader[32] = (unsigned char) (pixPerM>>24);
 
-	file.open(fileName, std::fstream::in | std::fstream::out | std::fstream::binary );
+	file.open(fileName, std::ios::out | std::ios::binary );
 
-	file.write()
+	file.write(reinterpret_cast<const char*>(bmpfileheader),14);
+	file.write(reinterpret_cast<const char*>(bmpinfoheader),40);
 
+	RGBColor rgb;
+	for( int i = 0 ; i < dataLength ; i++ ) {
+		rgb = data[i];
+
+		double red = (data[i].r)*255;
+		double green = (data[i].g)*255;
+		double blue = (data[i].b)*255;
+
+		unsigned char color[3]  = { (int)floor(blue), (int)floor(green), (int)floor(red) };
+		file.write(reinterpret_cast<const char*>(color), 3);
+	}
+
+	file.flush();
+	file.close();
 }
 
 int _tmain(int argc, char* argv[]) {
@@ -192,15 +109,45 @@ int _tmain(int argc, char* argv[]) {
 	SettingsFile& fileWithSettings = SettingsFile::parseFile(fileName);
 	std::cout<<"rendering..."<<std::endl;
 
-	vect& vec = vect(1.0,40.5,12.4);
+	Command::CommandArgs& dimension = fileWithSettings.getArgsFor(Command::DIMENSION);
 
-	vect& newNormalized = vect::normalizeVect(vec);
+	int width = dimension.DimArgs.width;
+	int hight  = dimension.DimArgs.hight;
+	int arrayPoint = 0;
 
-	
-	std::cout<<vec<<std::endl;
-	std::cout<<newNormalized<<std::endl;
-	std::cout<<vec<<std::endl;
-	
+	RGBColor *pixel = new RGBColor[ width*hight ];
+	vect O(0,0,0);
+	vect x(1,0,0);
+	vect y(0,1,0);
+	vect z(0,0,1);
+	vect campos(3.0,1.5,-4.0);
+	vect look_at(0,0,0);
+	vect diff_btw(campos.getX() - look_at.getX(), campos.getY() - look_at.getY(), campos.getZ() - look_at.getZ());
+
+	vect camdir = vect::normalizeVect(diff_btw.negative());
+	vect camright = vect::normalizeVect(y.crossProduct(camdir));
+	vect camdown = camright.crossProduct(camdir);
+	Camera scene_cam(campos, camdir, camright, camdown);
+
+	Color white_light(1.0,1.0,1.0,0);
+	Color pretty_green(0.5,1.0,0.5,0.3);
+	Color gray(0.5,0.5,0.5,0);
+
+	Sphere scene_sphere(O, 1.0, pretty_green);
+
+	for( int i = 0 ; i < width ; i++ ) {
+		for( int j = 0 ; j < hight ; j++ ) {
+			arrayPoint = j*width + i;
+
+			pixel[arrayPoint].r = 0.5;
+			pixel[arrayPoint].r = 1.0;
+			pixel[arrayPoint].r = 1.0;
+
+		}
+	}
+
+	saveBMP(std::string("kul2.bmp"), width, hight, 72, pixel);
+
 	system("pause");
 
 	return 0;

@@ -22,8 +22,12 @@
 #include <cstdlib>
 
 #include "vect.h"
+#include "Camera.h"
 #include "Command.h"
 #include "SettingsFile.h"
+#include "Color.h"
+#include "Sphere.h"
+
 
 #include "glut.h"
 

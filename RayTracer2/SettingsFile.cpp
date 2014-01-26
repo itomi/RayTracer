@@ -32,3 +32,12 @@ SettingsFile& SettingsFile::parseFile( std::string& fileName ) {
 
 	return file;
 }
+
+Command::CommandArgs& SettingsFile::getArgsFor( Command::CommandType cmdType ) {
+	for( Command cmd : commands ) {
+		if( cmd.getType() == cmdType ) {
+			return cmd.args;
+		}
+	}
+	throw new std::exception("Nie znaleziono komendy");
+}

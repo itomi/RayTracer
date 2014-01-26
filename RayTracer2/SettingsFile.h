@@ -15,6 +15,8 @@ public:
 	~SettingsFile(void);
 	static SettingsFile& parseFile(std::string& fileName);
 
+	Command::CommandArgs& getArgsFor(Command::CommandType cmdType);
+
 
 
 };

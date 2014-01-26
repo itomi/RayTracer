@@ -10,6 +10,12 @@ vect::vect( double x, double y , double z )
 	this->z = z;
 }
 
+vect::vect( const vect& vec ) {
+	this->x = vec.x;
+	this->y = vec.y;
+	this->z = vec.z;
+}
+
 
 vect::~vect(void)
 {
@@ -50,6 +56,10 @@ vect& vect::negative( vect& vectToBeNegated ) {
 	return *new vect(-vectToBeNegated.x,-vectToBeNegated.y,-vectToBeNegated.z);
 }
 
+vect vect::negative() {
+	return vect(-x,-y,-z);
+}
+
 double vect::dotProduct( vect& vec2 ) {
 	return x*vec2.x + y*vec2.y + z*vec2.z;
 }
@@ -62,8 +72,8 @@ vect vect::crossProduct( vect& vec2 ) {
 	return vect(y*vec2.z - z*vec2.y, z*vec2.x - x*vec2.z, x*vec2.y - y*vec2.x);
 }
 
-vect vect::crossProduct( vect& vec1, vect& vec2 ) {
-	return vect(vec1.y*vec2.z - vec1.z*vec2.y, vec1.z*vec2.x - vec1.x*vec2.z, vec1.x*vec2.y - vec1.y*vec2.x);
+vect& vect::crossProduct( vect& vec1, vect& vec2 ) {
+	return *new vect(vec1.y*vec2.z - vec1.z*vec2.y, vec1.z*vec2.x - vec1.x*vec2.z, vec1.x*vec2.y - vec1.y*vec2.x);
 }
 
 vect vect::addVect( vect& vec2 ){
@@ -72,4 +82,8 @@ vect vect::addVect( vect& vec2 ){
 
 vect vect::multipVect( double multiplier ) {
 	return vect(x*multiplier,y*multiplier,z*multiplier);
+}
+
+double vect::countMagnitude() {
+	return sqrt(x*x+y*y+z*z);
 }

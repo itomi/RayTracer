@@ -7,6 +7,7 @@ class vect
 	double x,y,z;
 public:
 	vect(void);
+	vect(const vect& vec);
 	vect(double, double, double);
 	~vect(void);
 
@@ -14,8 +15,10 @@ public:
 	double& getY();
 	double& getZ();
 
-	
+	double countMagnitude();
+
 	void normalizeMe();
+	vect negative();
 
 	double dotProduct(vect& vec2);
 	vect crossProduct(vect& vec2);
@@ -25,7 +28,7 @@ public:
 	static vect& normalizeVect(vect& vectToNormalize);
 	static vect& negative(vect& vectToBeNegated);
 	static double dotProduct(vect& vec1, vect& vec2);
-	static vect crossProduct(vect& vec1, vect& vec2);
+	static vect& crossProduct(vect& vec1, vect& vec2);
 
 
 	friend std::ostream& operator<<(std::ostream& os, const vect& obj) {
