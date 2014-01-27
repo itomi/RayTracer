@@ -58,14 +58,14 @@ void Command::handleValues() {
 		this->args.SphereArgs.zpos = std::stof(commandLine.at(4));
 		this->args.SphereArgs.ambient[0] = std::stof(commandLine.at(5));
 		this->args.SphereArgs.ambient[1] = std::stof(commandLine.at(6));
-		this->args.SphereArgs.ambient[2] = std::stof(commandLine.at(6));
-		this->args.SphereArgs.diffuse[0] = std::stof(commandLine.at(7));
-		this->args.SphereArgs.diffuse[1] = std::stof(commandLine.at(8));
-		this->args.SphereArgs.diffuse[2] = std::stof(commandLine.at(9));
-		this->args.SphereArgs.specular[0] = std::stof(commandLine.at(10));
-		this->args.SphereArgs.specular[1] = std::stof(commandLine.at(11));
-		this->args.SphereArgs.specular[2] = std::stof(commandLine.at(12));
-		this->args.SphereArgs.shinines = std::stoi(commandLine.at(13));
+		this->args.SphereArgs.ambient[2] = std::stof(commandLine.at(7));
+		this->args.SphereArgs.diffuse[0] = std::stof(commandLine.at(8));
+		this->args.SphereArgs.diffuse[1] = std::stof(commandLine.at(9));
+		this->args.SphereArgs.diffuse[2] = std::stof(commandLine.at(10));
+		this->args.SphereArgs.specular[0] = std::stof(commandLine.at(11));
+		this->args.SphereArgs.specular[1] = std::stof(commandLine.at(12));
+		this->args.SphereArgs.specular[2] = std::stof(commandLine.at(13));
+		this->args.SphereArgs.shinines = std::stoi(commandLine.at(14));
 		break;
 	default:
 		throw new std::exception((std::string("Nieznany typ komendy: ") + commandLine.at(0)).c_str());

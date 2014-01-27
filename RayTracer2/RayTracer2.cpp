@@ -3,14 +3,24 @@
 
 #include "stdafx.h"
 
-void createSpheres(std::vector<Object*> scene_objs, SettingsFile& file) {
+void createSpheres(std::vector<Object*>& scene_objs, SettingsFile& file) {
 	std::vector<Command::CommandArgs> spheres = file.getArgsFor(Command::SPHERE);
 
 	for( Command::CommandArgs arg : spheres ) {
-		std::cout<<arg.SphereArgs.xpos<<" - "<<arg.SphereArgs.ypos<<std::endl;
-		scene_objs.push_back(new Sphere(*new vect(arg.SphereArgs.xpos, arg.SphereArgs.ypos, arg.SphereArgs.zpos), arg.SphereArgs.radius, *new Color(arg.SphereArgs.specular[0],arg.SphereArgs.specular[1],arg.SphereArgs.specular[2], ((double)arg.SphereArgs.shinines)/100.0)));
+		scene_objs.push_back(new Sphere(*new vect(arg.SphereArgs.xpos, arg.SphereArgs.ypos, arg.SphereArgs.zpos), arg.SphereArgs.radius, *new Color(/*arg.SphereArgs.specular[0],arg.SphereArgs.specular[1],arg.SphereArgs.specular[2] , ((double)arg.SphereArgs.shinines)/100.0)*/)));
+	}
+
+	std::cout<<scene_objs.size();
+}
+
+void 	createLights(std::vector<Source*>& scene_lights, SettingsFile& fileWithSettings) {
+	std::vector<Command::CommandArgs> lights = fileWithSettings.getArgsFor(Command::SOURCE);
+
+	for( Command::CommandArgs arg : lights ) {
+		scene_lights.push_back(new Light(*new vect(arg.LightArgs.xpos, arg.LightArgs.ypos, arg.LightArgs.zpos), *new Color(arg.LightArgs.specular[0], arg.LightArgs.specular[1],arg.LightArgs.specular[2], 1.0 )));
 	}
 }
+
 
 void saveBMP(std::string fileName, int w, int h, int dpi, RGBColor *data) {
 	std::fstream file;
@@ -96,10 +106,12 @@ Color getColorAt(vect& intersection_pos, vect& intersection_ray_dir, std::vector
 			vect& distanceToLight = light->getPosition().addVect(intersection_pos.negative()).normalize();
 			float distanceToLightMagnitude = distanceToLight.countMagnitude();
 
-			Ray& shadow_ray = Ray(intersection_pos, light->getPosition().addVect(intersection_pos.negative()).normalize());
+			Ray shadow_ray = Ray(intersection_pos, distanceToLight);
 
-			std::vector<double> secondary_intersection;
+			
 			if( shadow ) {
+				std::cout<<"s"<<std::endl;
+				std::vector<double> secondary_intersection;
 				for( int i = 0 ; i < scene_objs.size() ; i++) {
 					Object* obj = scene_objs.at(i);
 					secondary_intersection.push_back(obj->findIntersection(shadow_ray));
@@ -128,12 +140,10 @@ Color getColorAt(vect& intersection_pos, vect& intersection_ray_dir, std::vector
 
 					double specular = reflection_dir.dotProduct(light_dir);
 					if(specular > 0.0) {
-						specular = pow(specular,10);
+						specular = pow(specular,20);
 						finalColor = finalColor.addColor((light->getColor().colorScalar(specular*first_obj_color.getS())));
 					}
-
 				}
-
 			}
 		}
 	}
@@ -173,6 +183,116 @@ int firstIntersection(std::vector<double>& intersections ) {
 	}
 }
 
+Color getColorAt2(vect intersection_position, vect intersecting_ray_direction, std::vector<Object*> scene_objects, int index_of_winning_object, std::vector<Source*> light_sources, double accuracy, double ambientlight) {
+
+	Color winning_object_color = scene_objects.at(index_of_winning_object)->getColor();
+	vect winning_object_normal = scene_objects.at(index_of_winning_object)->getNormalAt(intersection_position);
+
+	if (winning_object_color.getS() == 2) {
+		int square = (int)floor(intersection_position.getX()) + (int)floor(intersection_position.getZ());
+
+		if ((square % 2) == 0) {
+			winning_object_color.setR(0);
+			winning_object_color.setG(0);
+			winning_object_color.setB(0);
+		}
+		else {
+			winning_object_color.setR(1);
+			winning_object_color.setG(1);
+			winning_object_color.setB(1);
+		}
+	}
+
+	Color final_color = winning_object_color.colorScalar(ambientlight);
+
+	if (winning_object_color.getS() > 0 && winning_object_color.getS() <= 1) {
+		double dot1 = winning_object_normal.dotProduct(intersecting_ray_direction.negative());
+		vect scalar1 = winning_object_normal.multipVect(dot1);
+		vect add1 = scalar1.addVect(intersecting_ray_direction);
+		vect scalar2 = add1.multipVect(2);
+		vect add2 = intersecting_ray_direction.negative().addVect(scalar2);
+		vect reflection_direction = add2.normalize();
+
+		Ray reflection_ray (intersection_position, reflection_direction);
+
+		// determine what the ray intersects with first
+		std::vector<double> reflection_intersections;
+
+		for (int reflection_index = 0; reflection_index < scene_objects.size(); reflection_index++) {
+			reflection_intersections.push_back(scene_objects.at(reflection_index)->findIntersection(reflection_ray));
+		}
+
+		int index_of_winning_object_with_reflection = firstIntersection(reflection_intersections);
+
+		if (index_of_winning_object_with_reflection != -1) {
+			if (reflection_intersections.at(index_of_winning_object_with_reflection) > accuracy) {
+
+				vect reflection_intersection_position = intersection_position.addVect(reflection_direction.multipVect(reflection_intersections.at(index_of_winning_object_with_reflection)));
+				vect reflection_intersection_ray_direction = reflection_direction;
+
+				Color reflection_intersection_color = getColorAt2(reflection_intersection_position, reflection_intersection_ray_direction, scene_objects, index_of_winning_object_with_reflection, light_sources, accuracy, ambientlight);
+
+				final_color = final_color.addColor(reflection_intersection_color.colorScalar(winning_object_color.getS()));
+			}
+		}
+	}
+
+	for (int light_index = 0; light_index < light_sources.size(); light_index++) {
+		vect light_direction = light_sources.at(light_index)->getPosition().addVect(intersection_position.negative()).normalize();
+
+		float cosine_angle = winning_object_normal.dotProduct(light_direction);
+
+		if (cosine_angle > 0) {
+			// test for shadows
+			bool shadowed = false;
+
+			vect distance_to_light = light_sources.at(light_index)->getPosition().addVect(intersection_position.negative()).normalize();
+			float distance_to_light_magnitude = distance_to_light.countMagnitude();
+
+			Ray shadow_ray (intersection_position, light_sources.at(light_index)->getPosition().addVect(intersection_position.negative()).normalize());
+
+			std::vector<double> secondary_intersections;
+
+			for (int object_index = 0; object_index < scene_objects.size() && shadowed == false; object_index++) {
+				secondary_intersections.push_back(scene_objects.at(object_index)->findIntersection(shadow_ray));
+			}
+
+			for (int c = 0; c < secondary_intersections.size(); c++) {
+				if (secondary_intersections.at(c) > accuracy) {
+					if (secondary_intersections.at(c) <= distance_to_light_magnitude) {
+						shadowed = true;
+					}
+					break;
+				}
+			}
+
+			if (shadowed == false) {
+				final_color = final_color.addColor(winning_object_color.colorMultiply(light_sources.at(light_index)->getColor()).colorScalar(cosine_angle));
+
+				if (winning_object_color.getS() > 0 && winning_object_color.getS() <= 1) {
+					// special [0-1]
+					double dot1 = winning_object_normal.dotProduct(intersecting_ray_direction.negative());
+					vect scalar1 = winning_object_normal.multipVect(dot1);
+					vect add1 = scalar1.addVect(intersecting_ray_direction);
+					vect scalar2 = add1.multipVect(2);
+					vect add2 = intersecting_ray_direction.negative().addVect(scalar2);
+					vect reflection_direction = add2.normalize();
+
+					double specular = reflection_direction.dotProduct(light_direction);
+					if (specular > 0) {
+						specular = pow(specular, 10);
+						final_color = final_color.addColor(light_sources.at(light_index)->getColor().colorScalar(specular*winning_object_color.getS()));
+					}
+				}
+
+			}
+
+		}
+	}
+
+	return final_color.clip();
+}
+
 int _tmain(int argc, char* argv[]) {
 	std::string fileName = "";
 	if( argc == 1 ) {
@@ -190,12 +310,8 @@ int _tmain(int argc, char* argv[]) {
 
 	std::vector<Command::CommandArgs> dimension = fileWithSettings.getArgsFor(Command::DIMENSION);
 
-	int width = dimension.at(0).DimArgs.width;
-	int hight  = dimension.at(0).DimArgs.hight;
-
-	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGBA);   
-	glutInitWindowSize(width, hight);
-	glutCreateWindow("Ray Tracing");
+	int width = dimension.at(0).DimArgs.width*2;
+	int hight = dimension.at(0).DimArgs.hight*2;
 
 	double aspectRatio = static_cast<double>(width) / static_cast<double>(hight);
 	double ambLight = 0.5;
@@ -207,12 +323,13 @@ int _tmain(int argc, char* argv[]) {
 	GLubyte  glpixel[1][1][3];
 	vect O(0,0,0);
 	vect x(1,0,0);
-	vect y(0,1,0);
-	vect planePos(0,-2.0,0);
+	vect y(1,0,0);
+	vect planePos = vect(-1.0,-1.0,-1.0).normalize();
+	vect planePos2 = vect(-1.0, 1.0, -1.0).normalize();
 	vect z(0,0,1);
 
-	vect camPosition(3.0,1.5,-10.0);
-	vect camLookAt(0,0,0);
+	vect camPosition(0.0,0.0,-15.0);
+	vect camLookAt(0.0,0.0,0.0);
 	vect camPointsOnVec(camPosition.getX() - camLookAt.getX(), camPosition.getY() - camLookAt.getY(), camPosition.getZ() - camLookAt.getZ());
 
 	vect cameraDir = vect::normalizeVect(camPointsOnVec.negative());
@@ -222,28 +339,34 @@ int _tmain(int argc, char* argv[]) {
 
 	Color white_light (1.0, 1.0, 1.0, 0);
 	Color pretty_green (0.5, 1.0, 0.5, 1.0);
-	Color maroon (0.5, 0.25, 0.25, 0);
+	Color maroon (0.5, 0.25, 0.25, 2);
+	Color someColor( 0.5, 0.0, 0.5, 0.3);
 	Color tile_floor (1, 1, 1, 2);
 	Color gray (0.5, 0.5, 0.5, 0);
-	Color black (0.0, 0.0, 0.0, 0);
+	Color black (0.0, 0.0, 0.0, 0.9);
 
-	Sphere scene_sphere(O, 1.0, pretty_green);
-	Plane scene_plane(y, -1, maroon);
-	vect& light_pos = vect(-7,10, -10);
-	Light scene_light(light_pos, white_light);
+	Sphere scene_sphere(O, 1.5, black);
+	Plane scene_plane(planePos, -6.0, maroon);
+	Plane scene_plane2(planePos2, -6.0, pretty_green);
+	vect& light_pos = vect(0.0,15.0,0.0);
+	Light scene_light(light_pos, pretty_green);
 	Light ambient_light(light_pos, white_light);
 
 	std::vector<Object*> scene_objects;
 	std::vector<Source*> scene_lights;
 
 	createSpheres(scene_objects, fileWithSettings);
+	createLights(scene_lights, fileWithSettings);
+	for( Object* obj : scene_objects ) {
+		Sphere* sphere = (Sphere*)obj;
+		std::cout<<"Sfera: " <<sphere->getPosition();
+	}
 
 	scene_lights.push_back(dynamic_cast<Source*>(&scene_light));
 	//scene_lights.push_back(dynamic_cast<Source*>(&ambient_light));
 
 	scene_objects.push_back(dynamic_cast<Object*>(&scene_plane));
-	scene_objects.push_back(dynamic_cast<Object*>(&scene_sphere));
-
+	scene_objects.push_back(dynamic_cast<Object*>(&scene_plane2));
 	double xamnt, yamnt; 
 
 	for( int i = 0 ; i < width ; i++ ) {
@@ -262,7 +385,7 @@ int _tmain(int argc, char* argv[]) {
 			}
 
 			vect cam_ray_origin = scene_cam.getCamPos();
-			vect cam_ray_dir = cameraDir.addVect(camright.multipVect(xamnt - 0.5).addVect(camdown.multipVect(yamnt -0.5))).normalize();
+			vect cam_ray_dir = cameraDir.addVect(camright.multipVect(xamnt - 0.5).addVect(camdown.multipVect(yamnt - 0.5))).normalize();
 
 			Ray cam_ray = Ray(cam_ray_origin, cam_ray_dir);
 
@@ -284,7 +407,7 @@ int _tmain(int argc, char* argv[]) {
 					vect& intersection_pos = cam_ray_origin.addVect(cam_ray_dir.multipVect(intersections.at(index_of_first_intersection)));
 					vect& intersection_ray_direction = cam_ray_dir;
 
-					Color& thisPixelColor = getColorAt(intersection_pos, intersection_ray_direction, scene_objects, index_of_first_intersection,scene_lights,accuracy,ambLight);
+					Color& thisPixelColor = getColorAt2(intersection_pos, intersection_ray_direction, scene_objects, index_of_first_intersection,scene_lights,accuracy,ambLight);
 
 					pixel[arrayPoint].r = thisPixelColor.getR();
 					pixel[arrayPoint].b = thisPixelColor.getB();
@@ -293,10 +416,6 @@ int _tmain(int argc, char* argv[]) {
 					glpixel[0][0][0] = thisPixelColor.getR() * 255;
 					glpixel[0][0][1] = thisPixelColor.getG() * 255;
 					glpixel[0][0][2] = thisPixelColor.getB() * 255;
-
-					glRasterPos3f(i, j, 0);
-					glDrawPixels(1, 1, GL_RGB, GL_UNSIGNED_BYTE, glpixel);
-
 				}
 			}
 
@@ -307,7 +426,7 @@ int _tmain(int argc, char* argv[]) {
 	std::cout<<"nazewa bez bmp:\n";
 	std::cin>> fileName;
 
-	if( fileName.find(".") == std::string::npos ) {
+	if( fileName.find(".bmp") == std::string::npos ) {
 		fileName = fileName + ".bmp";
 	}
 
@@ -317,4 +436,5 @@ int _tmain(int argc, char* argv[]) {
 
 	return 0;
 }
+
 
