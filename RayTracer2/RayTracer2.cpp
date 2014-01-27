@@ -215,7 +215,6 @@ Color getColorAt2(vect intersection_position, vect intersecting_ray_direction, s
 
 		Ray reflection_ray (intersection_position, reflection_direction);
 
-		// determine what the ray intersects with first
 		std::vector<double> reflection_intersections;
 
 		for (int reflection_index = 0; reflection_index < scene_objects.size(); reflection_index++) {
@@ -243,7 +242,6 @@ Color getColorAt2(vect intersection_position, vect intersecting_ray_direction, s
 		float cosine_angle = winning_object_normal.dotProduct(light_direction);
 
 		if (cosine_angle > 0) {
-			// test for shadows
 			bool shadowed = false;
 
 			vect distance_to_light = light_sources.at(light_index)->getPosition().addVect(intersection_position.negative()).normalize();
@@ -270,7 +268,6 @@ Color getColorAt2(vect intersection_position, vect intersecting_ray_direction, s
 				final_color = final_color.addColor(winning_object_color.colorMultiply(light_sources.at(light_index)->getColor()).colorScalar(cosine_angle));
 
 				if (winning_object_color.getS() > 0 && winning_object_color.getS() <= 1) {
-					// special [0-1]
 					double dot1 = winning_object_normal.dotProduct(intersecting_ray_direction.negative());
 					vect scalar1 = winning_object_normal.multipVect(dot1);
 					vect add1 = scalar1.addVect(intersecting_ray_direction);
@@ -357,13 +354,8 @@ int _tmain(int argc, char* argv[]) {
 
 	createSpheres(scene_objects, fileWithSettings);
 	createLights(scene_lights, fileWithSettings);
-	for( Object* obj : scene_objects ) {
-		Sphere* sphere = (Sphere*)obj;
-		std::cout<<"Sfera: " <<sphere->getPosition();
-	}
 
-	scene_lights.push_back(dynamic_cast<Source*>(&scene_light));
-	//scene_lights.push_back(dynamic_cast<Source*>(&ambient_light));
+	//scene_lights.push_back(dynamic_cast<Source*>(&scene_light));
 
 	scene_objects.push_back(dynamic_cast<Object*>(&scene_plane));
 	scene_objects.push_back(dynamic_cast<Object*>(&scene_plane2));
